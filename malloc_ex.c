@@ -15,15 +15,24 @@
 * 0       0.1     2/17    T       Skeleton of "replacing" malloc/free.
 * 1       0.2     2/17    T       Finish necessary linkedlist implementation.
 * 3       0.3     2/18    T       Integrate together.
+* 4       0.4     2/18    T       Fix duplicate includes, rewrite malloc record search.
 *
 *H***********************************************************************/
 
+#ifndef _INC_MEM_LEAK_CHECK
+
+#define _INC_MEM_LEAK_CHECK
+
 #ifndef _INC_STDLIB
+
 #include <stdlib.h>
+
 #endif
 
 #ifndef _INC_STDIO
+
 #include <stdio.h>
+
 #endif
 
 int init_finished = 0;
@@ -48,7 +57,7 @@ typedef struct {
 } mcMallocRecord;
 
 struct mcLinkedNode* mcAllocLinkedNode(void* data, int dataSize) {
-    struct mcLinkedNode* node = malloc(sizeof(struct mcLinkedNode));
+    struct mcLinkedNode* node = (struct mcLinkedNode*)malloc(sizeof(struct mcLinkedNode));
     if (node == NULL)
         return NULL;
     node->data = malloc(dataSize);
@@ -133,21 +142,18 @@ int mcMallocCount = 0;
 int mcFreeCount = 0;
 int mcMallocBytes = 0;
 
-void* mcSearchTargetAddr = NULL;
-int mcSearchResultIndex = -1;
-
-int searchTraverse(int index, void* record) {
-    mcMallocRecord* mallocRecord = (mcMallocRecord*)record;
-    if (mallocRecord->mallocAddr == mcSearchTargetAddr)
-        mcSearchResultIndex = index;
-    return 1;
-}
 
 int searchRecord(void* mallocAddr) {
-    mcSearchTargetAddr = mallocAddr;
-    mcSearchResultIndex = -1;
-    mcLinkedListIterate(&mcMallocList, searchTraverse);
-    return mcSearchResultIndex;
+    struct mcLinkedNode* current = mcMallocList.head;
+    int index = 0;
+    while (current != NULL) {
+        mcMallocRecord* record = (mcMallocRecord*)current->data;
+        if (record->mallocAddr == mallocAddr)
+            return index;
+        current = current->next;
+        index++;
+    }
+    return -1;
 }
 
 int outputTraverse(int index, void* record) {
@@ -202,3 +208,5 @@ void mcFree(void* ptr) {
 
 #define malloc(ARG) mcMalloc( ARG, __FILE__, __LINE__, __FUNCTION__)
 #define free(ARG) mcFree( ARG )
+
+#endif
