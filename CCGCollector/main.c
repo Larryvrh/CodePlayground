@@ -5,6 +5,7 @@
 
 //#include "TrackedMalloc.h"
 
+//Source: https://gist.github.com/badboy/6267743
 int HashAddress(void *address) {
     uint64 key = (uint64) address;
     key = (~key) + (key << 18);
